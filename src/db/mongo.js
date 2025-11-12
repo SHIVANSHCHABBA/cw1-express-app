@@ -1,34 +1,24 @@
+// src/db/mongo.js (CommonJS, native driver only)
 require('dotenv').config();
-const { MongoClient } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require('mongodb');
 
 const uri = process.env.MONGO_URI;
-if (!uri) {
-  throw new Error('MONGO_URI environment variable is not set');
+if (!uri || !uri.startsWith('mongodb')) {
+  throw new Error('MONGO_URI missing or malformed in .env');
 }
 
-// Use a global variable to cache the client and the connect promise so the same
-// connection is reused across module reloads / serverless invocations.
-if (!global._cw1_mongo) {
-  global._cw1_mongo = {
-    client: new MongoClient(uri),
-    connectPromise: null
-  };
-}
+let client;
 
 async function connectDb() {
-  const cached = global._cw1_mongo;
-
-  if (!cached.connectPromise) {
-    // start connection and cache the promise
-    cached.connectPromise = cached.client.connect();
+  if (!client) {
+    client = new MongoClient(uri, {
+      serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true }
+    });
+    await client.connect();
+    console.log('✅ Connected to MongoDB Atlas');
   }
-
-  // await the connection to be established
-  await cached.connectPromise;
-
-  // db() will use the DB specified in the URI or the driver's default
-  const db = cached.client.db();
-
+  // Explicitly select your DB by name (matches your Atlas screenshot)
+  const db = client.db('FullStackCW1');
   return {
     db,
     lessons: db.collection('lesson'),

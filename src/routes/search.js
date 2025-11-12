@@ -1,36 +1,24 @@
-const express = require('express');
-const { connectDb } = require('../db/mongo');
+// routes/search.js
+const router = require("express").Router();
+const { connectDb } = require("../db/mongo");
 
-const router = express.Router();
-
-router.get('/', async (req, res) => {
-  const q = req.query.q || '';
-
-  if (!q || q.trim() === '') {
-    return res.json([]);
-  }
-
-  const rx = new RegExp(q, 'i');
-  const n = parseFloat(q);
-  const isFiniteN = Number.isFinite(n);
-
-  const orClauses = [
-    { topic: { $regex: rx } },
-    { location: { $regex: rx } }
-  ];
-
-  if (isFiniteN) {
-    orClauses.push({ price: n });
-    orClauses.push({ space: n });
-  }
-
+router.get("/", async (req, res, next) => {
   try {
+    const q = (req.query.q || "").toString().trim();
+    if (!q) return res.json([]);
+
     const { lessons } = await connectDb();
-    const results = await lessons.find({ $or: orClauses }).toArray();
+
+    const rx = new RegExp(q, "i");
+    const N = Number(q);
+    const useNum = Number.isFinite(N);
+
+    const filters = [{ topic: { $regex: rx } }, { location: { $regex: rx } }];
+    if (useNum) { filters.push({ price: N }, { space: N }); }
+
+    const results = await lessons.find({ $or: filters }).toArray();
     res.json(results);
-  } catch (err) {
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  } catch (e) { next(e); }
 });
 
 module.exports = router;

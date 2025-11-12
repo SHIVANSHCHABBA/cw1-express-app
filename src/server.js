@@ -6,6 +6,7 @@ const lessonImage = require('./middleware/staticImages');
 const lessonsRouter = require('./routes/lessons');
 const ordersRouter = require('./routes/orders');
 const searchRouter = require('./routes/search');
+const { connectDb } = require('./db/mongo');
 
 const app = express();
 
@@ -19,26 +20,39 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
 
-// add root route to avoid "Cannot GET /"
+// Root
 app.get('/', (req, res) => {
   res.json({ ok: true, message: 'API is running. See /api/health or /api/lessons' });
 });
 
-// Mount routes
+// Mount routers
 app.use('/api/lessons', lessonsRouter);
 app.use('/api/orders', ordersRouter);
 app.use('/api/search', searchRouter);
 
-// Static image handler
+// Serve lesson images
 app.get('/images/lessons/:file', lessonImage);
 
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ error: err.message || 'Internal server error' });
+  res.status(500).json({ error: err && err.message ? err.message : 'Internal server error' });
 });
 
+// Start server only after DB connection
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
+
+(async () => {
+  try {
+    await connectDb();
+    console.log('Connected to MongoDB');
+  } catch (err) {
+    console.error('Failed to connect to MongoDB:', err && err.message ? err.message : err);
+    console.error('Check MONGO_URI and ensure credentials / special characters are URL-encoded.');
+    process.exit(1);
+  }
+
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+})();
