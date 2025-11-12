@@ -19,6 +19,11 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
 
+// add root route to avoid "Cannot GET /"
+app.get('/', (req, res) => {
+  res.json({ ok: true, message: 'API is running. See /api/health or /api/lessons' });
+});
+
 // Mount routes
 app.use('/api/lessons', lessonsRouter);
 app.use('/api/orders', ordersRouter);

@@ -10,7 +10,7 @@ if (!uri) {
 // connection is reused across module reloads / serverless invocations.
 if (!global._cw1_mongo) {
   global._cw1_mongo = {
-    client: new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true }),
+    client: new MongoClient(uri),
     connectPromise: null
   };
 }
