@@ -1,0 +1,6 @@
+.env
+node_modules/
+# Optional: local env variants
+.env.local
+.env.*.local
+.DS_Store
